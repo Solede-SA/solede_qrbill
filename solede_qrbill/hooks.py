@@ -25,7 +25,7 @@ app_license = "mit"
 # ------------------
 
 # include js, css files in header of desk.html
-# app_include_css = "/assets/solede_qrbill/css/solede_qrbill.css"
+app_include_css = "/assets/solede_qrbill/css/qr_bill_print.css"
 # app_include_js = "/assets/solede_qrbill/js/solede_qrbill.js"
 
 # include js, css files in header of web template
@@ -43,7 +43,9 @@ app_license = "mit"
 # page_js = {"page" : "public/js/file.js"}
 
 # include js in doctype views
-# doctype_js = {"doctype" : "public/js/doctype.js"}
+doctype_js = {
+	"Sales Invoice" : "public/js/sales_invoice.js"
+}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
@@ -74,10 +76,11 @@ app_license = "mit"
 # ----------
 
 # add methods and filters to jinja environment
-# jinja = {
-# 	"methods": "solede_qrbill.utils.jinja_methods",
-# 	"filters": "solede_qrbill.utils.jinja_filters"
-# }
+jinja = {
+	"methods": [
+		"solede_qrbill.qrbill.utils.get_qr_bill_html"
+	]
+}
 
 # Installation
 # ------------
@@ -137,13 +140,12 @@ app_license = "mit"
 # ---------------
 # Hook on document methods and events
 
-# doc_events = {
-# 	"*": {
-# 		"on_update": "method",
-# 		"on_cancel": "method",
-# 		"on_trash": "method"
-# 	}
-# }
+doc_events = {
+	"Sales Invoice": {
+		"validate": "solede_qrbill.qrbill.overrides.validate_swiss_qr_bill",
+		"on_submit": "solede_qrbill.qrbill.overrides.generate_qr_reference_on_submit"
+	}
+}
 
 # Scheduled Tasks
 # ---------------
@@ -241,4 +243,15 @@ app_license = "mit"
 # default_log_clearing_doctypes = {
 # 	"Logging DocType Name": 30  # days to retain logs
 # }
+
+# Fixtures
+# --------
+fixtures = [
+	{
+		"dt": "Custom Field",
+		"filters": [
+			["module", "=", "Solede QR Bill"]
+		]
+	}
+]
 

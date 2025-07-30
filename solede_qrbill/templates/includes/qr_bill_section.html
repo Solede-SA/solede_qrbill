@@ -1,0 +1,67 @@
+{# Swiss QR-Bill Template Section #}
+{# This template is included in the Sales Invoice print format #}
+
+<style>
+.qr-bill-container {
+    page-break-before: always;
+    page-break-inside: avoid;
+    width: 210mm;
+    height: 105mm;
+    position: relative;
+    margin: 0;
+    padding: 0;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.qr-bill-scissors {
+    border-top: 1px dashed #000;
+    width: 100%;
+    margin-bottom: 0;
+    position: relative;
+}
+
+.qr-bill-scissors::before {
+    content: "✂";
+    position: absolute;
+    top: -10px;
+    left: -20px;
+    font-size: 20px;
+}
+
+.qr-bill-content {
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+/* Ensure QR bill is always at the bottom of the page */
+@media print {
+    .qr-bill-container {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 210mm;
+        height: 105mm;
+        page-break-before: avoid;
+        page-break-inside: avoid;
+    }
+    
+    /* Add spacing before QR bill in the document flow */
+    .qr-bill-spacer {
+        height: 105mm;
+        page-break-before: always;
+    }
+}
+</style>
+
+{# Only show QR Bill for Swiss invoices #}
+{% if doc.doctype == "Sales Invoice" and doc.custom_qr_bank_account %}
+    {% set qr_bill_html = get_qr_bill_html(doc) %}
+    {% if qr_bill_html %}
+        {# Spacer for print layout #}
+        <div class="qr-bill-spacer visible-print"></div>
+        
+        {# QR Bill container #}
+        {{ qr_bill_html | safe }}
+    {% endif %}
+{% endif %}

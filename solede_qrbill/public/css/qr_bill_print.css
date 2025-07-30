@@ -1,0 +1,86 @@
+/* Swiss QR-Bill Print Styles */
+
+/* QR Bill Container Styles */
+.qr-bill-container {
+    page-break-before: always;
+    page-break-inside: avoid;
+    width: 210mm;
+    height: 105mm;
+    position: relative;
+    margin: 0;
+    padding: 0;
+    font-family: Arial, Helvetica, sans-serif;
+    background: white;
+}
+
+/* Scissors line for cutting */
+.qr-bill-scissors {
+    border-top: 1px dashed #000;
+    width: 100%;
+    margin-bottom: 0;
+    position: relative;
+}
+
+.qr-bill-scissors span {
+    position: absolute;
+    top: -10px;
+    left: -20px;
+    font-size: 20px;
+}
+
+/* QR Bill content wrapper */
+.qr-bill-content {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Print-specific styles */
+@media print {
+    /* Ensure QR bill is at the bottom of the page */
+    .qr-bill-container {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 210mm;
+        height: 105mm;
+        page-break-before: avoid;
+        page-break-inside: avoid;
+        margin: 0;
+        padding: 0;
+    }
+    
+    /* Hide scissors symbol in print */
+    .qr-bill-scissors span {
+        display: none;
+    }
+    
+    /* Ensure proper spacing before QR bill */
+    .qr-bill-spacer {
+        height: 105mm;
+        page-break-before: always;
+        display: block;
+    }
+    
+    /* Ensure SVG prints correctly */
+    .qr-bill-content svg {
+        width: 100% !important;
+        height: 100% !important;
+        max-width: 210mm !important;
+        max-height: 105mm !important;
+    }
+}
+
+/* Screen preview styles */
+@media screen {
+    .qr-bill-container {
+        border: 1px solid #ddd;
+        margin: 20px auto;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .qr-bill-spacer {
+        display: none;
+    }
+}
