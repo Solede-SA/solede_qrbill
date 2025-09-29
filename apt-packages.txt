@@ -1,0 +1,8 @@
+libcairo2-dev
+pkg-config
+python3-dev
+libgirepository1.0-dev
+libglib2.0-dev
+gcc
+g++
+libffi-dev
