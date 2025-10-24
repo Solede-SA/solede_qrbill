@@ -5,14 +5,19 @@ frappe.ui.form.on('Sales Invoice', {
     refresh: function(frm) {
         // Check if QR fields should be visible
         toggle_qr_fields_visibility(frm);
-        
+
+        // Set default QR bank account if not already set
+        if (!frm.doc.custom_qr_bank_account && frm.doc.customer && frm.doc.company) {
+            set_default_qr_bank_account(frm);
+        }
+
         // Add QR-Bill preview button if bank account is selected
         if (frm.doc.custom_qr_bank_account && frm.doc.company_address && frm.doc.customer_address) {
             frm.add_custom_button(__('Preview QR-Bill'), function() {
                 preview_qr_bill(frm);
             }, __('Actions'));
         }
-        
+
         // Set bank account filter
         set_bank_account_filter(frm);
     },
@@ -32,6 +37,17 @@ frappe.ui.form.on('Sales Invoice', {
         frm.set_value('custom_qr_bank_account', '');
         set_bank_account_filter(frm);
         toggle_qr_fields_visibility(frm);
+        // Set default after company change
+        if (frm.doc.customer) {
+            set_default_qr_bank_account(frm);
+        }
+    },
+
+    customer: function(frm) {
+        // Set default QR bank account when customer changes
+        if (frm.doc.company && !frm.doc.custom_qr_bank_account) {
+            set_default_qr_bank_account(frm);
+        }
     },
     
     custom_qr_bank_account: function(frm) {
@@ -160,7 +176,7 @@ function toggle_qr_fields_visibility(frm) {
         frm.set_df_property('custom_qr_additional_info', 'hidden', 1);
         return;
     }
-    
+
     // Check both company and customer addresses
     Promise.all([
         frappe.db.get_value('Address', frm.doc.customer_address, 'country'),
@@ -168,21 +184,72 @@ function toggle_qr_fields_visibility(frm) {
     ]).then(results => {
         const customer_country = results[0].message.country;
         const company_country = results[1].message.country;
-        
+
         // Show fields only if both are Swiss addresses
         const show_qr_fields = customer_country === 'Switzerland' && company_country === 'Switzerland';
-        
+
         frm.set_df_property('custom_qr_bank_account', 'hidden', !show_qr_fields);
         frm.set_df_property('custom_qr_additional_info', 'hidden', !show_qr_fields);
-        
+
         // Clear values if hiding fields
         if (!show_qr_fields) {
             frm.set_value('custom_qr_bank_account', '');
             frm.set_value('custom_qr_additional_info', '');
         }
-        
+
         // Refresh field area to apply changes
         frm.refresh_field('custom_qr_bank_account');
         frm.refresh_field('custom_qr_additional_info');
+    });
+}
+
+function set_default_qr_bank_account(frm) {
+    // Set default QR Bank Account with priority: Customer > Company > First Available
+
+    // Priority 1: Check customer default
+    frappe.db.get_value('Customer', frm.doc.customer, 'custom_default_qr_bank_account').then(r => {
+        if (r.message && r.message.custom_default_qr_bank_account) {
+            // Validate that the account belongs to the current company and is QR-enabled
+            validate_and_set_bank_account(frm, r.message.custom_default_qr_bank_account);
+        } else {
+            // Priority 2: Check company default
+            frappe.db.get_value('Company', frm.doc.company, 'custom_default_qr_bank_account').then(r => {
+                if (r.message && r.message.custom_default_qr_bank_account) {
+                    validate_and_set_bank_account(frm, r.message.custom_default_qr_bank_account);
+                } else {
+                    // Priority 3: Get first available QR bank account
+                    frappe.call({
+                        method: 'frappe.client.get_list',
+                        args: {
+                            doctype: 'Bank Account',
+                            filters: {
+                                'company': frm.doc.company,
+                                'custom_is_qr_iban': 1,
+                                'disabled': 0
+                            },
+                            fields: ['name'],
+                            limit: 1
+                        },
+                        callback: function(r) {
+                            if (r.message && r.message.length > 0) {
+                                frm.set_value('custom_qr_bank_account', r.message[0].name);
+                            }
+                        }
+                    });
+                }
+            });
+        }
+    });
+}
+
+function validate_and_set_bank_account(frm, bank_account) {
+    // Validate that the bank account is valid for this company and is QR-enabled
+    frappe.db.get_value('Bank Account', bank_account, ['company', 'custom_is_qr_iban', 'disabled']).then(r => {
+        if (r.message &&
+            r.message.company === frm.doc.company &&
+            r.message.custom_is_qr_iban === 1 &&
+            r.message.disabled === 0) {
+            frm.set_value('custom_qr_bank_account', bank_account);
+        }
     });
 }
