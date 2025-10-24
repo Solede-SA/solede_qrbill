@@ -62,16 +62,20 @@ def generate_qr_bill_svg(sales_invoice_name):
 def is_qr_bill_applicable(doc):
 	"""
 	Check if QR-Bill should be generated for this document
-	
+
 	Args:
 		doc: Sales Invoice document
-		
+
 	Returns:
 		bool: True if QR-Bill should be generated
 	"""
 	if doc.doctype != "Sales Invoice":
 		return False
-	
+
+	# Skip QR-Bill for credit notes (return invoices) - negative amounts not supported
+	if doc.get("is_return"):
+		return False
+
 	# Check if invoice has a QR bank account selected
 	if not doc.get("custom_qr_bank_account"):
 		return False
