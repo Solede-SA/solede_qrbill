@@ -40,7 +40,7 @@ def validate_swiss_iban(iban):
 		if char.isdigit():
 			numeric_iban += char
 		else:
-			numeric_iban += str(ord(char) - ord('A') + 10)
+			numeric_iban += str(ord(char) - ord("A") + 10)
 
 	# Check if mod 97 equals 1
 	return int(numeric_iban) % 97 == 1
@@ -95,7 +95,7 @@ def validate_qr_reference(reference):
 	reference = reference.replace(" ", "")
 
 	# Check if it's exactly 27 digits
-	if not re.match(r'^\d{27}$', reference):
+	if not re.match(r"^\d{27}$", reference):
 		return False
 
 	# Validate check digit (last digit)
@@ -167,7 +167,7 @@ def validate_swiss_address(address_doc):
 	# Check postal code (4 digits for Switzerland)
 	if not address_doc.pincode:
 		errors.append(_("Postal code is required"))
-	elif not re.match(r'^\d{4}$', str(address_doc.pincode)):
+	elif not re.match(r"^\d{4}$", str(address_doc.pincode)):
 		errors.append(_("Postal code must be 4 digits"))
 
 	# Check city

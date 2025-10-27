@@ -30,7 +30,9 @@ def validate_swiss_qr_bill(doc, method):
 
 		# Check if it's marked as QR-IBAN
 		if not bank_account.get("custom_is_qr_iban"):
-			frappe.throw(_("Selected bank account {0} is not configured as QR-IBAN").format(bank_account.name))
+			frappe.throw(
+				_("Selected bank account {0} is not configured as QR-IBAN").format(bank_account.name)
+			)
 
 		# Validate IBAN
 		iban = bank_account.iban or bank_account.bank_account_no

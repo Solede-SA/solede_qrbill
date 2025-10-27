@@ -20,15 +20,16 @@ def generate_qr_reference(invoice_number):
 		str: 27-digit QR reference with check digit
 	"""
 	# Extract only digits from invoice number
-	digits_only = re.sub(r'[^0-9]', '', invoice_number)
+	digits_only = re.sub(r"[^0-9]", "", invoice_number)
 
 	# If no digits, use a timestamp-based approach
 	if not digits_only:
 		import time
+
 		digits_only = str(int(time.time() * 1000))[-10:]
 
 	# Pad with zeros to make it 26 digits
-	base_ref = digits_only.ljust(26, '0')[:26]
+	base_ref = digits_only.ljust(26, "0")[:26]
 
 	# Calculate check digit
 	check_digit = calculate_mod10_recursive(base_ref)
@@ -57,7 +58,7 @@ def format_qr_reference(reference):
 		reference[7:12],
 		reference[12:17],
 		reference[17:22],
-		reference[22:27]
+		reference[22:27],
 	]
 
 	return " ".join(parts)
@@ -87,7 +88,7 @@ def get_language_from_customer(customer_name):
 			"it-CH": "it",
 			"en": "en",
 			"en-US": "en",
-			"en-GB": "en"
+			"en-GB": "en",
 		}
 		return language_map.get(language, "en")
 
@@ -184,7 +185,7 @@ def clean_text_for_qr(text, max_length=70):
 
 	# Remove special characters that might cause issues
 	# Keep only alphanumeric, spaces, and basic punctuation
-	cleaned = re.sub(r'[^\w\s\-.,/]', '', str(text))
+	cleaned = re.sub(r"[^\w\s\-.,/]", "", str(text))
 
 	# Remove extra spaces
 	cleaned = " ".join(cleaned.split())

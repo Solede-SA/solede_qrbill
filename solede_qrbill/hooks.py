@@ -43,9 +43,7 @@ app_include_css = "/assets/solede_qrbill/css/qr_bill_print.css"
 # page_js = {"page" : "public/js/file.js"}
 
 # include js in doctype views
-doctype_js = {
-	"Sales Invoice" : "public/js/sales_invoice.js"
-}
+doctype_js = {"Sales Invoice": "public/js/sales_invoice.js"}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
@@ -76,11 +74,7 @@ doctype_js = {
 # ----------
 
 # add methods and filters to jinja environment
-jinja = {
-	"methods": [
-		"solede_qrbill.qrbill.utils.get_qr_bill_html"
-	]
-}
+jinja = {"methods": ["solede_qrbill.qrbill.utils.get_qr_bill_html"]}
 
 # Installation
 # ------------
@@ -143,7 +137,7 @@ jinja = {
 doc_events = {
 	"Sales Invoice": {
 		"validate": "solede_qrbill.qrbill.overrides.validate_swiss_qr_bill",
-		"on_submit": "solede_qrbill.qrbill.overrides.generate_qr_reference_on_submit"
+		"on_submit": "solede_qrbill.qrbill.overrides.generate_qr_reference_on_submit",
 	}
 }
 
@@ -246,12 +240,4 @@ doc_events = {
 
 # Fixtures
 # --------
-fixtures = [
-	{
-		"dt": "Custom Field",
-		"filters": [
-			["module", "=", "Solede QR Bill"]
-		]
-	}
-]
-
+fixtures = [{"dt": "Custom Field", "filters": [["module", "=", "Solede QR Bill"]]}]

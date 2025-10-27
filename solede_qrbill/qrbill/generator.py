@@ -38,7 +38,7 @@ def generate_qr_bill_svg(sales_invoice_name):
 		import tempfile
 
 		# Create temporary file
-		with tempfile.NamedTemporaryFile(mode='w', suffix='.svg', delete=False) as tmp_file:
+		with tempfile.NamedTemporaryFile(mode="w", suffix=".svg", delete=False) as tmp_file:
 			temp_path = tmp_file.name
 
 		try:
@@ -56,7 +56,9 @@ def generate_qr_bill_svg(sales_invoice_name):
 				os.remove(temp_path)
 
 	except Exception as e:
-		frappe.log_error(f"Error generating QR-Bill for {sales_invoice_name}: {e!s}", "QR-Bill Generation Error")
+		frappe.log_error(
+			f"Error generating QR-Bill for {sales_invoice_name}: {e!s}", "QR-Bill Generation Error"
+		)
 		frappe.throw(_("Error generating QR-Bill: {0}").format(str(e)))
 
 
@@ -134,7 +136,7 @@ def prepare_qr_bill_data(doc):
 		"name": company.company_name[:70],  # Max 70 chars
 		"pcode": str(company_address.pincode),
 		"city": company_address.city,
-		"country": "CH"
+		"country": "CH",
 	}
 
 	# Add street if available
@@ -146,7 +148,7 @@ def prepare_qr_bill_data(doc):
 		"account": iban.replace(" ", ""),
 		"creditor": creditor_data,
 		"amount": f"{doc.grand_total:.2f}",
-		"currency": doc.currency
+		"currency": doc.currency,
 	}
 
 	# Add reference only if we have a valid QR-IBAN
@@ -175,7 +177,7 @@ def prepare_qr_bill_data(doc):
 			"name": customer.customer_name[:70],  # Max 70 chars
 			"pcode": str(customer_address.pincode),
 			"city": customer_address.city,
-			"country": "CH"
+			"country": "CH",
 		}
 
 		# Add street if available
