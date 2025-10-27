@@ -3,7 +3,7 @@ app_title = "Solede Qrbill"
 app_publisher = "Solede SA"
 app_description = "Swiss QR-Bill generator for ERPNext Sales Invoices. Automatically generates compliant QR-Bills for Swiss companies and customers."
 app_email = "info@solede.com"
-app_license = "mit"
+app_license = "AGPLv3"
 
 # Apps
 # ------------------
