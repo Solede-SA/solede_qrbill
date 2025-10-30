@@ -5,7 +5,7 @@ import frappe
 from frappe import _
 from qrbill import QRBill
 
-from .utils import generate_qr_reference
+from .utils import generate_qr_reference, get_language_from_customer
 from .validator import validate_qr_reference, validate_swiss_iban
 
 
@@ -189,5 +189,8 @@ def prepare_qr_bill_data(doc):
 	# Add additional information if available
 	if doc.get("custom_qr_additional_info"):
 		qr_data["additional_information"] = doc.custom_qr_additional_info[:140]  # Max 140 chars
+
+	# Add language preference from customer
+	qr_data["language"] = get_language_from_customer(doc.customer)
 
 	return qr_data
