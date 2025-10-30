@@ -173,8 +173,26 @@ def prepare_qr_bill_data(doc):
 
 	# Add debtor data if available
 	if customer and customer_address:
+		# Format customer name with line breaks if too long
+		customer_name = customer.customer_name
+		if len(customer_name) > 40:
+			# Split at word boundary near middle
+			words = customer_name.split()
+			line1 = ""
+			line2 = ""
+			current_length = 0
+
+			for word in words:
+				if current_length + len(word) + 1 <= 35 and not line2:
+					line1 += (word + " ")
+					current_length += len(word) + 1
+				else:
+					line2 += (word + " ")
+
+			customer_name = (line1.strip() + "\n" + line2.strip())[:70]
+
 		debtor_data = {
-			"name": customer.customer_name[:70],  # Max 70 chars
+			"name": customer_name,  # Max 70 chars, can include \n for line break
 			"pcode": str(customer_address.pincode),
 			"city": customer_address.city,
 			"country": "CH",
