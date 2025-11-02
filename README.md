@@ -22,8 +22,8 @@ Swiss QR-Bill generator for ERPNext Sales Invoices. Automatically generates comp
 ## 📦 Installazione
 
 ```bash
-# Ottieni l'app
-bench get-app solede_qrbill
+# Ottieni l'app da GitHub
+bench get-app https://github.com/Solede-SA/solede_qrbill.git
 
 # Installa nel sito
 bench --site [nome-sito] install-app solede_qrbill
