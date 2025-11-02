@@ -184,10 +184,10 @@ def prepare_qr_bill_data(doc):
 
 			for word in words:
 				if current_length + len(word) + 1 <= 40 and not line2:
-					line1 += (word + " ")
+					line1 += word + " "
 					current_length += len(word) + 1
 				else:
-					line2 += (word + " ")
+					line2 += word + " "
 
 			customer_name = (line1.strip() + "\n" + line2.strip())[:70]
 		else:
