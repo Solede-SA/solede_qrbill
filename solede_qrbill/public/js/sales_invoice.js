@@ -3,13 +3,8 @@
 
 frappe.ui.form.on('Sales Invoice', {
     refresh: function(frm) {
-        // Check if QR fields should be visible
-        toggle_qr_fields_visibility(frm);
-
-        // Set default QR bank account if not already set
-        if (!frm.doc.custom_qr_bank_account && frm.doc.customer && frm.doc.company) {
-            set_default_qr_bank_account(frm);
-        }
+        // Check if QR fields should be visible and set defaults
+        toggle_qr_fields_visibility_and_set_defaults(frm);
 
         // Add QR-Bill preview button if bank account is selected
         if (frm.doc.custom_qr_bank_account && frm.doc.company_address && frm.doc.customer_address) {
@@ -24,30 +19,24 @@ frappe.ui.form.on('Sales Invoice', {
     
     customer_address: function(frm) {
         // Check visibility when customer address changes
-        toggle_qr_fields_visibility(frm);
+        toggle_qr_fields_visibility_and_set_defaults(frm);
     },
-    
+
     company_address: function(frm) {
         // Check visibility when company address changes
-        toggle_qr_fields_visibility(frm);
+        toggle_qr_fields_visibility_and_set_defaults(frm);
     },
-    
+
     company: function(frm) {
         // Clear bank account when company changes
         frm.set_value('custom_qr_bank_account', '');
         set_bank_account_filter(frm);
-        toggle_qr_fields_visibility(frm);
-        // Set default after company change
-        if (frm.doc.customer) {
-            set_default_qr_bank_account(frm);
-        }
+        toggle_qr_fields_visibility_and_set_defaults(frm);
     },
 
     customer: function(frm) {
-        // Set default QR bank account when customer changes
-        if (frm.doc.company && !frm.doc.custom_qr_bank_account) {
-            set_default_qr_bank_account(frm);
-        }
+        // Check visibility and set defaults when customer changes
+        toggle_qr_fields_visibility_and_set_defaults(frm);
     },
     
     custom_qr_bank_account: function(frm) {
@@ -192,9 +181,51 @@ function toggle_qr_fields_visibility(frm) {
         frm.set_df_property('custom_qr_additional_info', 'hidden', !show_qr_fields);
 
         // Clear values if hiding fields
-        if (!show_qr_fields) {
+        if (!show_qr_fields && (frm.doc.custom_qr_bank_account || frm.doc.custom_qr_additional_info)) {
             frm.set_value('custom_qr_bank_account', '');
             frm.set_value('custom_qr_additional_info', '');
+        }
+
+        // Refresh field area to apply changes
+        frm.refresh_field('custom_qr_bank_account');
+        frm.refresh_field('custom_qr_additional_info');
+    });
+}
+
+function toggle_qr_fields_visibility_and_set_defaults(frm) {
+    // Show/hide QR fields based on customer address country
+    if (!frm.doc.customer_address || !frm.doc.company_address) {
+        // Hide fields if no addresses selected
+        frm.set_df_property('custom_qr_bank_account', 'hidden', 1);
+        frm.set_df_property('custom_qr_additional_info', 'hidden', 1);
+        return;
+    }
+
+    // Check both company and customer addresses
+    Promise.all([
+        frappe.db.get_value('Address', frm.doc.customer_address, 'country'),
+        frappe.db.get_value('Address', frm.doc.company_address, 'country')
+    ]).then(results => {
+        const customer_country = results[0].message.country;
+        const company_country = results[1].message.country;
+
+        // Show fields only if both are Swiss addresses
+        const show_qr_fields = customer_country === 'Switzerland' && company_country === 'Switzerland';
+
+        frm.set_df_property('custom_qr_bank_account', 'hidden', !show_qr_fields);
+        frm.set_df_property('custom_qr_additional_info', 'hidden', !show_qr_fields);
+
+        if (show_qr_fields) {
+            // Set default QR bank account if not already set and both addresses are Swiss
+            if (!frm.doc.custom_qr_bank_account && frm.doc.customer && frm.doc.company) {
+                set_default_qr_bank_account(frm);
+            }
+        } else {
+            // Clear values if hiding fields
+            if (frm.doc.custom_qr_bank_account || frm.doc.custom_qr_additional_info) {
+                frm.set_value('custom_qr_bank_account', '');
+                frm.set_value('custom_qr_additional_info', '');
+            }
         }
 
         // Refresh field area to apply changes
