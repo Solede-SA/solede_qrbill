@@ -147,7 +147,7 @@ def prepare_qr_bill_data(doc):
 	qr_data = {
 		"account": iban.replace(" ", ""),
 		"creditor": creditor_data,
-		"amount": f"{doc.grand_total:.2f}",
+		"amount": f"{doc.rounded_total or doc.grand_total:.2f}",
 		"currency": doc.currency,
 	}
 
