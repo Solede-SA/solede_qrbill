@@ -3,8 +3,9 @@
 
 frappe.ui.form.on('Sales Invoice', {
     refresh: function(frm) {
-        // Check if QR fields should be visible and set defaults
-        toggle_qr_fields_visibility_and_set_defaults(frm);
+        // Su refresh aggiorna solo la visibilita': NON impostare/azzerare valori
+        // (set_value sporcherebbe il form -> "Not Saved" all'apertura di una bozza).
+        toggle_qr_fields_visibility_and_set_defaults(frm, false);
 
         // Add QR-Bill preview button if bank account is selected
         if (frm.doc.custom_qr_bank_account && frm.doc.company_address && frm.doc.customer_address) {
@@ -19,24 +20,24 @@ frappe.ui.form.on('Sales Invoice', {
     
     customer_address: function(frm) {
         // Check visibility when customer address changes
-        toggle_qr_fields_visibility_and_set_defaults(frm);
+        toggle_qr_fields_visibility_and_set_defaults(frm, true);
     },
 
     company_address: function(frm) {
         // Check visibility when company address changes
-        toggle_qr_fields_visibility_and_set_defaults(frm);
+        toggle_qr_fields_visibility_and_set_defaults(frm, true);
     },
 
     company: function(frm) {
         // Clear bank account when company changes
         frm.set_value('custom_qr_bank_account', '');
         set_bank_account_filter(frm);
-        toggle_qr_fields_visibility_and_set_defaults(frm);
+        toggle_qr_fields_visibility_and_set_defaults(frm, true);
     },
 
     customer: function(frm) {
         // Check visibility and set defaults when customer changes
-        toggle_qr_fields_visibility_and_set_defaults(frm);
+        toggle_qr_fields_visibility_and_set_defaults(frm, true);
     },
     
     custom_qr_bank_account: function(frm) {
@@ -192,7 +193,7 @@ function toggle_qr_fields_visibility(frm) {
     });
 }
 
-function toggle_qr_fields_visibility_and_set_defaults(frm) {
+function toggle_qr_fields_visibility_and_set_defaults(frm, allow_set) {
     // Show/hide QR fields based on customer address country
     if (!frm.doc.customer_address || !frm.doc.company_address) {
         // Hide fields if no addresses selected
@@ -215,14 +216,17 @@ function toggle_qr_fields_visibility_and_set_defaults(frm) {
         frm.set_df_property('custom_qr_bank_account', 'hidden', !show_qr_fields);
         frm.set_df_property('custom_qr_additional_info', 'hidden', !show_qr_fields);
 
+        // Imposta/azzera i valori solo se richiesto (cambio campo dell'utente) o su doc nuovo;
+        // mai sul refresh di un doc gia' salvato, altrimenti il form diventa "Not Saved".
+        const may_set = allow_set || frm.is_new();
         if (show_qr_fields) {
             // Set default QR bank account if not already set and both addresses are Swiss
-            if (!frm.doc.custom_qr_bank_account && frm.doc.customer && frm.doc.company) {
+            if (may_set && !frm.doc.custom_qr_bank_account && frm.doc.customer && frm.doc.company) {
                 set_default_qr_bank_account(frm);
             }
         } else {
             // Clear values if hiding fields
-            if (frm.doc.custom_qr_bank_account || frm.doc.custom_qr_additional_info) {
+            if (may_set && (frm.doc.custom_qr_bank_account || frm.doc.custom_qr_additional_info)) {
                 frm.set_value('custom_qr_bank_account', '');
                 frm.set_value('custom_qr_additional_info', '');
             }
