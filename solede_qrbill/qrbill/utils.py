@@ -192,3 +192,13 @@ def clean_text_for_qr(text, max_length=70):
 
 	# Truncate to max length
 	return cleaned[:max_length]
+
+
+def qr_address(name, street, pincode, city, country_code):
+	"""Parte (creditore o debitore) nella forma della libreria QR-bill: indirizzo strutturato con
+	codice paese a due lettere. Nome e via tagliati ai 70 caratteri dello standard; le righe lunghe
+	le spezza la libreria in fase di resa."""
+	party = {"name": name[:70], "pcode": str(pincode), "city": city, "country": country_code}
+	if street:
+		party["street"] = street[:70]
+	return party

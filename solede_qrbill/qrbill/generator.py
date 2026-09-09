@@ -1,12 +1,14 @@
 # Copyright (c) 2024, Solede SA and contributors
 # For license information, please see license.txt
 
+import io
+
 import frappe
 from frappe import _
 from qrbill import QRBill
 
-from .utils import generate_qr_reference, get_language_from_customer
-from .validator import validate_qr_reference, validate_swiss_iban
+from .utils import generate_qr_reference, get_language_from_customer, qr_address
+from .validator import is_qr_iban, validate_qr_reference, validate_swiss_iban
 
 
 @frappe.whitelist()
@@ -29,37 +31,23 @@ def generate_qr_bill_svg(sales_invoice_name):
 	# Prepare data for QR-Bill
 	qr_data = prepare_qr_bill_data(doc)
 
-	# Generate QR-Bill
 	try:
-		bill = QRBill(**qr_data)
-
-		# Generate SVG to a temporary file or string
-		import os
-		import tempfile
-
-		# Create temporary file
-		with tempfile.NamedTemporaryFile(mode="w", suffix=".svg", delete=False) as tmp_file:
-			temp_path = tmp_file.name
-
-		try:
-			# Generate SVG to file
-			bill.as_svg(temp_path)
-
-			# Read SVG content
-			with open(temp_path) as f:
-				svg_content = f.read()
-
-			return svg_content
-		finally:
-			# Clean up temporary file
-			if os.path.exists(temp_path):
-				os.remove(temp_path)
-
+		return render_qr_bill_svg(qr_data)
 	except Exception as e:
 		frappe.log_error(
 			f"Error generating QR-Bill for {sales_invoice_name}: {e!s}", "QR-Bill Generation Error"
 		)
 		frappe.throw(_("Error generating QR-Bill: {0}").format(str(e)))
+
+
+def render_qr_bill_svg(qr_data):
+	"""SVG del bollettino (210×106 mm) dai dati già preparati (conto, creditore, importo, valuta,
+	debitore, riferimento, informazioni aggiuntive, lingua): la sola resa, senza documento, così chi
+	genera una QR-fattura fuori da una Sales Invoice (es. BookFit per le istruzioni del bonifico)
+	riusa questo punto."""
+	out = io.StringIO()
+	QRBill(**qr_data).as_svg(out)
+	return out.getvalue()
 
 
 def is_qr_bill_applicable(doc):
@@ -131,80 +119,30 @@ def prepare_qr_bill_data(doc):
 	if not validate_qr_reference(doc.custom_qr_reference):
 		frappe.throw(_("Invalid QR reference"))
 
-	# Prepare creditor data
-	creditor_data = {
-		"name": company.company_name[:70],  # Max 70 chars
-		"pcode": str(company_address.pincode),
-		"city": company_address.city,
-		"country": "CH",
-	}
-
-	# Add street if available
-	if company_address.address_line1:
-		creditor_data["street"] = company_address.address_line1[:70]
-
-	# Prepare QR-Bill data
+	# Prepare QR-Bill data (creditor and debtor: Swiss addresses, `is_qr_bill_applicable` guarantees it)
 	qr_data = {
 		"account": iban.replace(" ", ""),
-		"creditor": creditor_data,
+		"creditor": qr_address(
+			company.company_name, company_address.address_line1, company_address.pincode, company_address.city, "CH"
+		),
 		"amount": f"{doc.rounded_total or doc.grand_total:.2f}",
 		"currency": doc.currency,
 	}
 
-	# Add reference only if we have a valid QR-IBAN
-	# QR-IBAN identification: positions 5-9 should be between 30000-31999
-	iban_clean = iban.replace(" ", "")
-	if len(iban_clean) >= 9:
-		qr_iban_identifier = iban_clean[4:9]
-		try:
-			identifier_num = int(qr_iban_identifier)
-			# Check if it's a QR-IBAN (30000-31999 range)
-			if 30000 <= identifier_num <= 31999:
-				# It's a QR-IBAN, we can use QRR reference
-				if doc.custom_qr_reference:
-					qr_data["reference_number"] = doc.custom_qr_reference
-			else:
-				# It's a normal IBAN, we cannot use QRR reference
-				# We could use SCOR reference or no reference
-				pass
-		except ValueError:
-			# Not a valid number, treat as normal IBAN
-			pass
+	# The QRR reference is allowed only with a QR-IBAN (identifier 30000-31999); a normal IBAN
+	# cannot carry it (SCOR or no reference)
+	if is_qr_iban(iban) and doc.custom_qr_reference:
+		qr_data["reference_number"] = doc.custom_qr_reference
 
-	# Add debtor data if available
+	# Add debtor data if available (long names are wrapped by the library itself)
 	if customer and customer_address:
-		# Format customer name with line break if exceeds 40 chars
-		customer_name = customer.customer_name
-		if len(customer_name) > 40:
-			# Split at word boundary near 40 chars
-			words = customer_name.split()
-			line1 = ""
-			line2 = ""
-			current_length = 0
-
-			for word in words:
-				if current_length + len(word) + 1 <= 40 and not line2:
-					line1 += word + " "
-					current_length += len(word) + 1
-				else:
-					line2 += word + " "
-
-			customer_name = (line1.strip() + "\n" + line2.strip())[:70]
-		else:
-			customer_name = customer_name[:70]
-
-		debtor_data = {
-			"name": customer_name,  # Max 70 chars total, can include \n for line break
-			"pcode": str(customer_address.pincode),
-			"city": customer_address.city,
-			"country": "CH",
-		}
-
-		# Add street if available
-		if customer_address.address_line1:
-			debtor_data["street"] = customer_address.address_line1[:70]
-
-		qr_data["debtor"] = debtor_data
+		qr_data["debtor"] = qr_address(
+			customer.customer_name,
+			customer_address.address_line1,
+			customer_address.pincode,
+			customer_address.city,
+			"CH",
+		)
 
 	# Add additional information if available
 	if doc.get("custom_qr_additional_info"):
